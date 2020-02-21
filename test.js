@@ -5,9 +5,12 @@ const run = require('./index');
 const util = require('util');
 
 function promisify(fn) {
-    return function() {
-        return new Promise(resolve => resolve(fn.apply(this, arguments)));
+    if (typeof fn === 'function') {
+        return function() {
+            return new Promise(resolve => resolve(fn.apply(this, arguments)));
+        };
     };
+    return () => Promise.resolve(fn);
 }
 
 function sequence(options, test, bus, flow, params, parent) {
@@ -32,12 +35,13 @@ function sequence(options, test, bus, flow, params, parent) {
             if (!step.name) {
                 throw new Error('step name is required');
             }
+            const $meta = step.$meta || step.context.$meta;
             steps.push({
                 name: step.name,
                 methodName: step.method,
                 method: step.method ? bus.importMethod(step.method) : (params) => Promise.resolve(params),
-                params: (typeof step.params === 'function') ? promisify(step.params) : () => Promise.resolve(step.params),
-                $meta: (typeof step.$meta === 'function') ? promisify(step.$meta) : (step.$meta && (() => Promise.resolve(step.$meta))),
+                params: promisify(step.params),
+                $meta: promisify($meta),
                 steps: step.steps,
                 context: step.context,
                 result: step.result,
