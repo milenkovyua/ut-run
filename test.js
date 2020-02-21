@@ -35,7 +35,7 @@ function sequence(options, test, bus, flow, params, parent) {
             if (!step.name) {
                 throw new Error('step name is required');
             }
-            const $meta = step.$meta || step.context.$meta;
+            const $meta = step.$meta || (step.context && step.context.$meta);
             steps.push({
                 name: step.name,
                 methodName: step.method,
